@@ -1,0 +1,214 @@
+<plominodatabase id="plone-slack">
+  <design>
+    <element id="frmMessage" title="frmMessage" type="PlominoForm">
+      <id type="Products.Archetypes.Field.StringField">frmMessage</id>
+      <onCreateDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></onCreateDocument>
+      <onOpenDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></onOpenDocument>
+      <beforeSaveDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></beforeSaveDocument>
+      <onSaveDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></onSaveDocument>
+      <onDeleteDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></onDeleteDocument>
+      <onSearch type="Products.Archetypes.Field.TextField"><![CDATA[]]></onSearch>
+      <beforeCreateDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></beforeCreateDocument>
+      <FormLayout type="Products.Archetypes.Field.TextField"><![CDATA[<p><span class="plominoFieldClass">onsave</span><span class="plominoFieldClass">rendered</span></p>]]></FormLayout>
+      <FormMethod type="Products.Archetypes.Field.TextField"><![CDATA[Auto]]></FormMethod>
+      <DocumentTitle type="Products.Archetypes.Field.TextField"><![CDATA[]]></DocumentTitle>
+      <DynamicDocumentTitle type="Products.Archetypes.Field.BooleanField">False</DynamicDocumentTitle>
+      <StoreDynamicDocumentTitle type="Products.Archetypes.Field.BooleanField">False</StoreDynamicDocumentTitle>
+      <DocumentId type="Products.Archetypes.Field.TextField"><![CDATA[#Plomino include libDefault
+return 'm'+doc.getItem('ts')]]></DocumentId>
+      <ActionBarPosition type="Products.Archetypes.Field.StringField">TOP</ActionBarPosition>
+      <HideDefaultActions type="Products.Archetypes.Field.BooleanField">False</HideDefaultActions>
+      <HideInMenu type="Products.Archetypes.Field.BooleanField">False</HideInMenu>
+      <isSearchForm type="Products.Archetypes.Field.BooleanField">False</isSearchForm>
+      <isPage type="Products.Archetypes.Field.BooleanField">False</isPage>
+      <SearchView type="Products.Archetypes.Field.StringField"/>
+      <SearchFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></SearchFormula>
+      <Position type="Products.Archetypes.Field.IntegerField"/>
+      <ResourcesJS type="Products.Archetypes.Field.TextField"><![CDATA[]]></ResourcesJS>
+      <ResourcesCSS type="Products.Archetypes.Field.TextField"><![CDATA[]]></ResourcesCSS>
+      <excludeFromNav type="Products.Archetypes.Field.BooleanField">False</excludeFromNav>
+      <elements>
+        <element id="doctype" title="doctype" type="PlominoField">
+          <id type="Products.Archetypes.Field.StringField">doctype</id>
+          <FieldType type="Products.Archetypes.Field.StringField">TEXT</FieldType>
+          <FieldMode type="Products.Archetypes.Field.StringField">CREATION</FieldMode>
+          <Formula type="Products.Archetypes.Field.TextField"><![CDATA[return 'Message']]></Formula>
+          <FieldReadTemplate type="Products.Archetypes.Field.StringField"/>
+          <FieldEditTemplate type="Products.Archetypes.Field.StringField"/>
+          <Mandatory type="Products.Archetypes.Field.BooleanField">False</Mandatory>
+          <ValidationFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></ValidationFormula>
+          <ToBeIndexed type="Products.Archetypes.Field.BooleanField">False</ToBeIndexed>
+          <IndexType type="Products.Archetypes.Field.StringField">DEFAULT</IndexType>
+          <HTMLAttributesFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></HTMLAttributesFormula>
+        </element>
+        <element id="rendered" title="rendered" type="PlominoField">
+          <id type="Products.Archetypes.Field.StringField">rendered</id>
+          <FieldType type="Products.Archetypes.Field.StringField">RICHTEXT</FieldType>
+          <FieldMode type="Products.Archetypes.Field.StringField">COMPUTEDONSAVE</FieldMode>
+          <Formula type="Products.Archetypes.Field.TextField"><![CDATA[#Plomino include libDefault
+
+view = db.getView('allUsers')
+
+template = u"""
+<div id="{ts}">
+  <div style="float: left">{avatar}</div>
+  <em>{user}</em>
+  <a href="#{ts}">#</a> 
+  <br/> 
+  <div style="white-space: pre-wrap;">{text}</div>
+  {edited}
+<div>"""
+
+message_subtypes = [
+    "channel_join",
+    "channel_name",
+    "channel_purpose",
+    "channel_topic",
+    "file_comment",
+    "file_mention",
+    "file_share",
+    "me_message",
+    "pinned_item",]
+
+def cleanup(text):
+    text = text.replace('<', '&lt;').replace('>', '&gt;')
+    while '```' in text:
+        text = text.replace('```', '<pre>', 1)
+        text = text.replace('```', '</pre>', 1)
+    # tracebacks contain unpaired `'s
+    # while '`' in text:
+    #     text = text.replace('`', '<code>', 1)
+    #     text = text.replace('`', '</code>', 1)
+    return text
+
+items = ['ts', 'user', 'text', 'edited']
+kv = dict([(i, doc.getItem(i)) for i in items]) 
+kv['text'] = cleanup(kv['text'])
+subtype = doc.getItem('subtype')
+if subtype in ['channel_join', 'channel_name', 'channel_purpose',
+               'channel_topic', 'file_comment', 'file_mention',
+               'me_message', 'pinned_item']:
+    kv['text'] = u'<span class="discreet">%s</span>' % kv['text'] 
+
+user = db.getDocument(doc.getItem('user').lower())
+kv['user'] = user.Title()
+kv['avatar'] = user.getItem('avatar')
+if 'edited' in kv:
+   kv['edited'] = '<small>' + kv['edited'] + '</small>'
+message = template.format(**kv)
+
+if subtype in ['file_mention', 'file_share', 'file_comment']:
+    title = doc.getItem('slack_props')['file']['title']
+    preview = doc.getItem('slack_props')['file'].get('preview')
+
+    if preview:
+        preview = preview.replace('<', '&lt;').replace('>', '&gt;')
+        message += u'''<div>
+        <h3 class="plomino-accordion-header"><a href="#">{title}</a></h3>
+        <div class="plomino-accordion-content"><pre>{preview}</pre></div>
+        </div>'''.format(title=title, preview=preview)
+
+    message += doc.getItem('file_link')
+
+elif subtype == 'pinned_item':
+    item_type = doc.getItem('slack_props')['item_type']
+    if item_type == 'C':
+        attachments = doc.getItem('slack_props')['attachments']
+        for attachment in attachments:
+            avatar_link = attachment.get('author_icon')
+            user = attachment.get('author_subname')
+            ts = attachment.get('ts')
+            kv = {'ts': 'pin' + ts,
+                  'avatar': '<img src="%s" alt="%s\'s avatar"/>' % (
+                      avatar_link, user),
+                  'user': user,
+                  'text': attachment.get('fallback'),
+                  'edited': ''
+                 }
+            link = '<p><a href="#%s">link</a></p>' % ts
+            message += template.format(**kv) + link
+
+return message
+]]></Formula>
+          <FieldReadTemplate type="Products.Archetypes.Field.StringField"/>
+          <FieldEditTemplate type="Products.Archetypes.Field.StringField"/>
+          <Mandatory type="Products.Archetypes.Field.BooleanField">False</Mandatory>
+          <ValidationFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></ValidationFormula>
+          <ToBeIndexed type="Products.Archetypes.Field.BooleanField">True</ToBeIndexed>
+          <IndexType type="Products.Archetypes.Field.StringField">DEFAULT</IndexType>
+          <HTMLAttributesFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></HTMLAttributesFormula>
+        </element>
+        <element id="timestamp" title="timestamp" type="PlominoField">
+          <id type="Products.Archetypes.Field.StringField">timestamp</id>
+          <FieldType type="Products.Archetypes.Field.StringField">DATETIME</FieldType>
+          <FieldMode type="Products.Archetypes.Field.StringField">COMPUTEDONSAVE</FieldMode>
+          <Formula type="Products.Archetypes.Field.TextField"><![CDATA[#Plomino include libDefault
+
+# return StringToDate(doc.getItem('ts').split('.')[0])
+# TODO: Plomino formulas don't handle fromtimestamp now]]></Formula>
+          <FieldReadTemplate type="Products.Archetypes.Field.StringField"/>
+          <FieldEditTemplate type="Products.Archetypes.Field.StringField"/>
+          <Mandatory type="Products.Archetypes.Field.BooleanField">False</Mandatory>
+          <ValidationFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></ValidationFormula>
+          <ToBeIndexed type="Products.Archetypes.Field.BooleanField">False</ToBeIndexed>
+          <IndexType type="Products.Archetypes.Field.StringField">DEFAULT</IndexType>
+          <HTMLAttributesFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></HTMLAttributesFormula>
+        </element>
+        <element id="onsave" title="onsave" type="PlominoField">
+          <id type="Products.Archetypes.Field.StringField">onsave</id>
+          <FieldType type="Products.Archetypes.Field.StringField">TEXT</FieldType>
+          <FieldMode type="Products.Archetypes.Field.StringField">COMPUTEDONSAVE</FieldMode>
+          <Formula type="Products.Archetypes.Field.TextField"><![CDATA[#Plomino include libDefault
+
+# Because onSave event is too late
+
+message = doc.getItem('slack_props')
+
+# Set a bunch of items
+doc.setItem("ts", message['ts'])
+doc.setItem("text", message["text"])
+
+subtype = message.get("subtype")
+doc.setItem("subtype", subtype)
+
+if subtype in ['file_share', 'file_mention', 'file_comment']:
+    name = message['file']['name']
+    url = message['file'].get('permalink_public')
+    if not url:
+        url = message['file'].get('permalink')
+    doc.setItem('file_name', name)
+    # TODO: show a thumbnail
+    doc.setItem('file_link', "<a href='%s'>%s</a>" % (url, name))
+
+if subtype == 'file_comment':
+    # override user
+    doc.setItem("user", message["comment"]["user"])
+elif subtype == 'file_share':
+    doc.setItem("user", message["file"]["user"])
+else:
+    doc.setItem("user", message["user"])
+
+attachments = message.get('attachments')
+if attachments:
+    for attachment in attachments:
+        # TODO
+        pass
+
+# The following are compound values, would need work .. look at last_set
+# for whether we need to import again
+edited = message.get('edited')
+if edited:
+    doc.setItem('edited_user', edited['user'])
+    doc.setItem('edited', edited['ts'])]]></Formula>
+          <FieldReadTemplate type="Products.Archetypes.Field.StringField"/>
+          <FieldEditTemplate type="Products.Archetypes.Field.StringField"/>
+          <Mandatory type="Products.Archetypes.Field.BooleanField">False</Mandatory>
+          <ValidationFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></ValidationFormula>
+          <ToBeIndexed type="Products.Archetypes.Field.BooleanField">False</ToBeIndexed>
+          <IndexType type="Products.Archetypes.Field.StringField">DEFAULT</IndexType>
+          <HTMLAttributesFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></HTMLAttributesFormula>
+        </element>
+      </elements>
+    </element>
+  </design>
+</plominodatabase>

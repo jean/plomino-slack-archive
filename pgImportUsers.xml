@@ -1,0 +1,95 @@
+<plominodatabase id="plone-slack">
+  <design>
+    <element id="pgImportUsers" title="pgImportUsers" type="PlominoForm">
+      <id type="Products.Archetypes.Field.StringField">pgImportUsers</id>
+      <onCreateDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></onCreateDocument>
+      <onOpenDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></onOpenDocument>
+      <beforeSaveDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></beforeSaveDocument>
+      <onSaveDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></onSaveDocument>
+      <onDeleteDocument type="Products.Archetypes.Field.TextField"><![CDATA[]]></onDeleteDocument>
+      <onSearch type="Products.Archetypes.Field.TextField"><![CDATA[]]></onSearch>
+      <beforeCreateDocument type="Products.Archetypes.Field.TextField"><![CDATA[#Plomino include libDefault
+
+users_json = req.get('users_json')
+if not users_json:
+    return
+
+json = json_loads(users_json.read())
+
+for user in json:
+    doc = db.createDocument()
+    doc.setItem("Form", 'frmUser')
+    # Keep this as record
+    doc.setItem('slack_props', user)
+    # Set a bunch of items
+    doc.setItem("id", user['id'])
+    doc.setItem("name", user["name"])
+    doc.setItem("deleted", user["deleted"])
+    doc.setItem("status", user["status"])
+    doc.setItem("color", user["color"])
+    doc.setItem("real_name", user["real_name"])
+    doc.setItem("tz", user["tz"])
+    doc.setItem("tz_label", user["tz_label"])
+    doc.setItem("tz_offset", user["tz_offset"])
+    doc.setItem("real_name", user["profile"]["real_name"])
+    doc.setItem("real_name_normalized", user["profile"]["real_name_normalized"])
+    doc.setItem("email", user["profile"]["email"])
+    doc.setItem("avatar", user["profile"]["image_32"])
+    doc.setItem("is_admin", user["is_admin"])
+    doc.setItem("is_owner", user["is_owner"])
+    doc.setItem("is_primary_owner", user["is_primary_owner"])
+    doc.setItem("is_restricted", user["is_restricted"])
+    doc.setItem("is_ultra_restricted", user["is_ultra_restricted"])
+    doc.setItem("is_bot", user["is_bot"])
+    # Compute id (etc) from Form
+    doc.save(creation=True)
+
+req.set('users_json', None)
+db.writeMessageOnPage('Imported %s users' % len(json), req)]]></beforeCreateDocument>
+      <FormLayout type="Products.Archetypes.Field.TextField"><![CDATA[
+<p>Upload <strong>users.json</strong></p>
+<p><span class="plominoFieldClass">users_json</span></p>
+<p><span class="plominoActionClass">import</span></p>
+]]></FormLayout>
+      <FormMethod type="Products.Archetypes.Field.TextField"><![CDATA[POST]]></FormMethod>
+      <DocumentTitle type="Products.Archetypes.Field.TextField"><![CDATA[]]></DocumentTitle>
+      <DynamicDocumentTitle type="Products.Archetypes.Field.BooleanField">False</DynamicDocumentTitle>
+      <StoreDynamicDocumentTitle type="Products.Archetypes.Field.BooleanField">False</StoreDynamicDocumentTitle>
+      <DocumentId type="Products.Archetypes.Field.TextField"><![CDATA[]]></DocumentId>
+      <ActionBarPosition type="Products.Archetypes.Field.StringField">TOP</ActionBarPosition>
+      <HideDefaultActions type="Products.Archetypes.Field.BooleanField">False</HideDefaultActions>
+      <HideInMenu type="Products.Archetypes.Field.BooleanField">False</HideInMenu>
+      <isSearchForm type="Products.Archetypes.Field.BooleanField">False</isSearchForm>
+      <isPage type="Products.Archetypes.Field.BooleanField">True</isPage>
+      <SearchView type="Products.Archetypes.Field.StringField"/>
+      <SearchFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></SearchFormula>
+      <Position type="Products.Archetypes.Field.IntegerField"/>
+      <ResourcesJS type="Products.Archetypes.Field.TextField"><![CDATA[]]></ResourcesJS>
+      <ResourcesCSS type="Products.Archetypes.Field.TextField"><![CDATA[]]></ResourcesCSS>
+      <excludeFromNav type="Products.Archetypes.Field.BooleanField">False</excludeFromNav>
+      <elements>
+        <element id="users_json" title="users_json" type="PlominoField">
+          <id type="Products.Archetypes.Field.StringField">users_json</id>
+          <FieldType type="Products.Archetypes.Field.StringField">ATTACHMENT</FieldType>
+          <FieldMode type="Products.Archetypes.Field.StringField">EDITABLE</FieldMode>
+          <Formula type="Products.Archetypes.Field.TextField"><![CDATA[]]></Formula>
+          <FieldReadTemplate type="Products.Archetypes.Field.StringField"/>
+          <FieldEditTemplate type="Products.Archetypes.Field.StringField"/>
+          <Mandatory type="Products.Archetypes.Field.BooleanField">False</Mandatory>
+          <ValidationFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></ValidationFormula>
+          <ToBeIndexed type="Products.Archetypes.Field.BooleanField">False</ToBeIndexed>
+          <IndexType type="Products.Archetypes.Field.StringField">DEFAULT</IndexType>
+          <HTMLAttributesFormula type="Products.Archetypes.Field.TextField"><![CDATA[]]></HTMLAttributesFormula>
+        </element>
+        <element id="import" title="Import" type="PlominoAction">
+          <id type="Products.Archetypes.Field.StringField">import</id>
+          <ActionType type="Products.Archetypes.Field.StringField">SAVE</ActionType>
+          <ActionDisplay type="Products.Archetypes.Field.StringField">SUBMIT</ActionDisplay>
+          <Content type="Products.Archetypes.Field.TextField"><![CDATA[]]></Content>
+          <Hidewhen type="Products.Archetypes.Field.TextField"><![CDATA[]]></Hidewhen>
+          <InActionBar type="Products.Archetypes.Field.BooleanField">False</InActionBar>
+        </element>
+      </elements>
+    </element>
+  </design>
+</plominodatabase>

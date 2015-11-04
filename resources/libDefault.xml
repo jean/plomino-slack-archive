@@ -1,0 +1,19 @@
+<plominodatabase id="plone-slack">
+  <design>
+    <resource id="libDefault" title="" type="Script (Python)"><![CDATA[## Script (Python) "libDefault"
+##bind container=container
+##bind context=context
+##bind namespace=
+##bind script=script
+##bind subpath=traverse_subpath
+##parameters=
+##title=
+##
+db = plominoContext.getParentDatabase()
+idx = db.getIndex()
+is_doc = isDocument(plominoDocument)
+doc = is_doc and plominoDocument or None
+req = getattr(plominoContext, 'REQUEST', None)
+]]></resource>
+  </design>
+</plominodatabase>
